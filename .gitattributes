@@ -1,2 +1,184 @@
 # Auto detect text files and perform LF normalization
-* text=auto
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Weather App</title>
+  <style>
+    body {
+      font-family: 'Arial', sans-serif;
+      text-align: center;
+      margin: 0;
+      padding: 0;
+      background: linear-gradient(135deg, #6a5acd, #8a2be2); /* New subtle gradient */
+      color: #fff;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      overflow: hidden;
+      position: relative;
+      transition: background 0.5s ease;
+    }
+
+    /* 3D Background Effect */
+    body::before {
+      content: '';
+      position: absolute;
+      top: -50%;
+      left: -50%;
+      width: 200%;
+      height: 200%;
+      background: radial-gradient(circle, rgba(255,255,255,0.2) 0%, rgba(255,255,255,0) 60%);
+      animation: spin 15s linear infinite;
+      z-index: -1; /* Ensure the background animation is behind the content */
+    }
+
+    @keyframes spin {
+      from {
+        transform: rotate(0deg);
+      }
+      to {
+        transform: rotate(360deg);
+      }
+    }
+
+    h1 {
+      font-size: 3.5rem;
+      margin-bottom: 20px;
+      text-shadow: 3px 3px 6px rgba(0, 0, 0, 0.5);
+    }
+
+    input {
+      padding: 12px;
+      width: 300px;
+      font-size: 16px;
+      margin-bottom: 10px;
+      border: 2px solid #4CAF50;
+      border-radius: 25px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+      outline: none;
+      z-index: 1; /* Ensure the input field is above the background */
+    }
+
+    button {
+      padding: 12px 25px;
+      font-size: 16px;
+      background: #4CAF50;
+      color: white;
+      border: none;
+      border-radius: 25px;
+      cursor: pointer;
+      transition: transform 0.3s, box-shadow 0.3s;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    }
+
+    button:hover {
+      background: #45a049;
+      transform: scale(1.05);
+      box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
+    }
+
+    #weather-display {
+      margin-top: 20px;
+      padding: 20px;
+      background: rgba(255, 255, 255, 0.9);
+      border-radius: 15px;
+      box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
+      width: 350px;
+      text-align: left;
+      color: #333;
+    }
+
+    #weather-display h2 {
+      font-size: 1.5rem;
+      margin-bottom: 10px;
+    }
+
+    .weather-icon {
+      display: block;
+      margin: 0 auto 10px;
+      width: 80px;
+      height: 80px;
+    }
+
+    .loading {
+      font-style: italic;
+      color: #555;
+    }
+
+    .error {
+      color: red;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+  <h1>☁️ Weather App ☀️</h1>
+  <input type="text" id="location" placeholder="Enter location">
+  <button onclick="getWeather()">Get Weather</button>
+  <div id="weather-display"></div>
+
+  <script>
+    async function getWeather() {
+      const location = document.getElementById('location').value.trim() || 'New York';
+      const apiKey = '520d15a10bd2c58c6780c3c5e463e2cd'; // Replace with your OpenWeatherMap API key
+      const weatherDisplay = document.getElementById('weather-display');
+      const body = document.body;
+
+      weatherDisplay.innerHTML = '<p class="loading">Loading...</p>'; // Loading message
+
+      try {
+        const res = await fetch(`https://api.openweathermap.org/data/2.5/weather?q=${encodeURIComponent(location)}&appid=${apiKey}`);
+        if (!res.ok) {
+          if (res.status === 404) {
+            throw new Error('City not found. Please check the spelling.');
+          } else if (res.status === 401) {
+            throw new Error('Invalid API key. Please provide a valid key.');
+          } else {
+            throw new Error(`Error: ${res.statusText} (${res.status})`);
+          }
+        }
+
+        const data = await res.json();
+
+        // Convert temperature from Kelvin to Celsius and Fahrenheit
+        const tempC = (data.main.temp - 273.15).toFixed(2);
+        const tempF = ((data.main.temp - 273.15) * 9 / 5 + 32).toFixed(2);
+
+        // Get weather icon
+        const iconCode = data.weather[0].icon;
+        const iconUrl = `https://openweathermap.org/img/wn/${iconCode}@2x.png`;
+
+        // Determine if it's day or night
+        const isDaytime = iconCode.includes('d') ? 'Daytime ☀️' : 'Nighttime 🌙';
+
+        // Dynamically change background color based on weather
+        if (data.weather[0].main.toLowerCase() === 'clear') {
+          body.style.background = 'linear-gradient(135deg, #ffbb33, #ff9933)';
+        } else if (data.weather[0].main.toLowerCase() === 'rain') {
+          body.style.background = 'linear-gradient(135deg, #1e90ff, #4682b4)';
+        } else if (data.weather[0].main.toLowerCase() === 'snow') {
+          body.style.background = 'linear-gradient(135deg, #add8e6, #b0e0e6)';
+        }
+
+        // Display weather details
+        weatherDisplay.innerHTML = `
+          <img src="${iconUrl}" alt="${data.weather[0].description}" class="weather-icon">
+          <h2>${data.name}, ${data.sys.country}</h2>
+          <p><strong>${isDaytime}</strong></p>
+          <p><strong>${data.weather[0].main}:</strong> ${data.weather[0].description}</p>
+          <p><strong>Temperature:</strong> ${tempC}°C / ${tempF}°F</p>
+          <p><strong>Humidity:</strong> ${data.main.humidity}%</p>
+          <p><strong>Wind Speed:</strong> ${data.wind.speed} m/s</p>
+        `;
+      } catch (error) {
+        weatherDisplay.innerHTML = `<p class="error">${error.message}</p>`;
+      }
+    }
+  </script>
+</body>
+</html>
+
